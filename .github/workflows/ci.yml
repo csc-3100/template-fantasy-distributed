@@ -1,0 +1,20 @@
+name: Java CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compile instructor starter (intentional failing acceptance tests)
+        if: hashFiles('.starter-template') != ''
+        run: mvn -B -DskipTests package
+      - name: Run full JUnit suite (student team repositories)
+        if: hashFiles('.starter-template') == ''
+        run: mvn -B clean verify

@@ -1,0 +1,2 @@
+This marker identifies the intentionally incomplete instructor starter.
+After creating your team repository, DELETE this file in your first PR to enable the full JUnit test gate in GitHub Actions.
