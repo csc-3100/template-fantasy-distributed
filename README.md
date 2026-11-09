@@ -1,49 +1,46 @@
-# CSC 3100 — Distributed Fantasy Adventure (A04)
+# CSC 3100 — A04 Distributed Fantasy Adventure
 
-**Instructor starter template — intentionally incomplete.** The code compiles, but instructor acceptance tests are initially expected to fail.
+> **Instructor starter template — intentionally incomplete.** Students use TDD to make the provided JUnit acceptance tests pass. The application is a small distributed visualization, **not a game engine**.
 
-## First step after using this template
+## Learning goals
 
-Create **one repository per two-student team** using **Use this template**. In your first feature PR, **delete `.starter-template`**. This activates the complete `mvn clean verify` CI gate automatically; you do **not** need to edit the instructor-provided YAML. The instructor template's CI checks compilation only so its incomplete exercises do not appear broken. **Your team's CI must run and pass all tests before merging completed feature PRs.** Early feature PRs may have failing tests while implementation is in progress; do not merge them until required checks pass.
+Implement Factory, Decorator, and Observer patterns; synchronize two Java Swing clients through MQTT; practice test-driven development and GitHub Actions CI/CD; package a JAR and run the same GUI in Docker through noVNC.
 
-## Team responsibilities and pull requests
+## Required demonstration
 
-| Partner A | Partner B |
-|---|---|
-| GUI + Observer | MQTT integration |
-| Character + equipment behavior | Console controls |
-| Game logic unit tests | MQTT message tests + Docker demonstration |
+Run **two instances of the same Swing application**:
 
-**One substantive PR per assigned feature per student**, each approved by the other partner. Each PR is a development log: ownership, implementation, tests, and evidence. Both partners integrate, review, and demonstrate the result. Write **four additional meaningful JUnit tests**, two per student. Do not modify instructor tests to make them pass.
+1. Local client from the IDE with `mvn exec:java`.
+2. Containerized client with `docker compose up --build`, viewed at `http://localhost:6080/vnc.html`.
 
-## Build and run
+Both instances display the same board and both players. Each instance creates and controls its own named player. A movement command changes position by **exactly one tile**. Sword, Shield, and Shoes can be added and removed at runtime; each decorator implements `draw(Graphics2D, int, int)`, delegates to the wrapped character, and draws its equipment. No combat, collision, scoring, game engine, or autonomous actions are required.
 
-Requirements: Java 21, Maven, Docker with Compose.
+## Architecture contract
 
-- Compile without running intentionally failing starter tests: `mvn -DskipTests package`
-- Run acceptance tests (fail until implemented): `mvn clean verify`
-- Start Swing desktop: `mvn exec:java`
-- Start Docker console: `docker compose run --build --rm game`
-- Use unique player and team names: `PLAYER=bob TEAM=team01 docker compose run --build --rm game`
+- **Factory:** creates the base fantasy character.
+- **Decorator:** composes Sword, Shield, and Shoes at runtime; draw methods compose visually as well as behaviorally.
+- **Blackboard:** extends `PropertyChangeSupport` and owns the authoritative local view of player states. Preserve this inheritance-based lecture design.
+- **Observer:** Swing listens to Blackboard changes and repaints on the Swing event-dispatch thread.
+- **Publisher:** sends local player-state updates to the public HiveMQ broker.
+- **Subscriber:** receives remote player-state updates and updates Blackboard without republishing.
+- **MQTT:** `tcp://broker.hivemq.com:1883`, QoS 1, retained state on `csc3100/a04/<team>/players/<username>`; subscribe using the team wildcard. Use unique team and player identifiers. Retained state is not an online-presence indicator; disconnected players remain at their last reported position.
 
-The Dockerfile, Compose YAML, and GitHub Actions workflow are **provided**. Students implement application behavior, not deployment configuration.
+## TDD and submission
 
-## Game behavior to implement
+The instructor provides most JUnit 5 acceptance tests. Students must **add three meaningful tests** for features of their choice, without weakening instructor tests. Implement functionality by making tests pass, and keep tests independent of the live public broker using test doubles. The CI workflow must run tests before packaging the executable JAR, building the Docker image, and smoke-testing the noVNC endpoint and Java process. The instructor provides the Dockerfile, Compose, workflow, and noVNC configuration; students implement application functionality, not infrastructure.
 
-**GUI:** Render a grid and named players, move one cell per arrow key, show equipment and attributes, and repaint on model changes via Observer.
+### Starter-template status
 
-**Console:** Implement interactive `w`, `a`, `s`, `d`, `sword`, `shield`, `quit` commands, one action per command. Print remote player updates.
+**This branch records the approved A04 contract, not a finished runnable template.** The existing `main` implementation still uses `GameModel` composition, a `MqttGateway`, and a console Docker entrypoint; those must be refactored before release. Existing tests and CI also reflect the previous assignment (23 tests and four student tests). Do not distribute this branch as the final A04 starter until implementation, test coverage, and Docker/noVNC verification are complete.
 
-**Patterns:** Use Factory for character creation, Decorator for Sword (+5 attack) and Shield (+5 defense), and Observer for model-to-view updates.
+## Implementation checklist for instructor preparation
 
-**MQTT:** Publish retained player states at QoS 1 on `csc3100/a04/<team>/players/<username>`; subscribe to the team wildcard topic. New players appear in existing clients, remote moves/equipment update other clients, and remote updates **must not** republish. A disconnected player remains at their last known position. Retained state does not prove current online presence.
+- [ ] Refactor `GameModel` into observable `Blackboard extends PropertyChangeSupport`.
+- [ ] Add runtime removal and Shoes; test decorator drawing delegation.
+- [ ] Separate `Publisher` and `Subscriber`, preserving MQTT protocol and preventing echoes.
+- [ ] Render decorated players in the shared Swing board and support one-tile commands.
+- [ ] Replace Docker console mode with Swing + Xvfb + lightweight desktop + noVNC.
+- [ ] Provide complete instructor acceptance tests and require exactly three additional student tests.
+- [ ] Update CI to test, package, build container, and smoke-test noVNC.
+- [ ] Verify IDE ↔ Docker bidirectional MQTT demonstration.
 
-**Tests:** 23 instructor JUnit tests cover characters, equipment, movement, Observer, JSON, and incoming MQTT message handling **without a live broker**. Add four student-written tests. For integration, demonstrate one GUI client and one interactive Docker console client.
-
-## README deliverables
-
-Replace this starter README with a brief project description, team member responsibilities, execution instructions, test instructions, CI badge, and design decisions. Include a screenshot at `docs/screenshot.png` embedded directly in the README, showing **at least two named players** in the Swing board. Explain why the model is independent of Swing, how Observer and Decorator are used, and why tests do not require the public broker.
-
-## Next week's individual lab
-
-Each student must independently identify the MQTT receiver, trace how the model changes, explain how Observer updates Swing, run and explain a JUnit test, and make a small instructor-requested code change. This is **a separate individual assessment**, not part of A04 homework grading.
