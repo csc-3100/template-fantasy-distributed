@@ -1,8 +1,9 @@
 services:
   game:
     build: .
-    stdin_open: true
-    tty: true
+    init: true
+    ports:
+      - "127.0.0.1:6080:6080"
     environment:
       PLAYER: ${PLAYER:-bob}
       TEAM: ${TEAM:-demo}
