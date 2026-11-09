@@ -8,24 +8,31 @@ Implement Factory, Decorator, and Observer patterns; synchronize two Java Swing 
 
 ## Required demonstration
 
-Run **two instances of the same Swing application**:
+Use Java 21, Maven, and a running Docker Desktop or Docker Engine with Compose. Run the demo after the full test suite passes. Pick a unique team ID and use it in both clients. Choose a different player name for each client.
 
-1. Local Swing client. Use the same unique team ID in both commands and a different player name for each instance.
+1. Open the Maven project in IntelliJ and select JDK 21. Run `edu.calpoly.csc3100.fantasy.Main` with environment variables `TEAM=your-team` and `PLAYER=alice`. You can also launch the same client from the IntelliJ terminal.
 
    ```sh
    TEAM=your-team PLAYER=alice mvn exec:java
    ```
 
-2. Containerized Swing client. In a second terminal, package the JAR, build the image, and open the browser desktop.
+2. In a second terminal, package the JAR and start the Docker client.
 
    ```sh
-   mvn -B -DskipTests package
+   mvn -B package
    TEAM=your-team PLAYER=bob docker compose up --build
    ```
 
-   Open [noVNC](http://localhost:6080/vnc.html?autoconnect=1). Click the Swing board to send it keyboard input. The browser endpoint binds to localhost. Run `docker compose down` to stop the container.
+3. Open [noVNC](http://localhost:6080/vnc.html?autoconnect=1) and click the Swing board to give the remote desktop keyboard focus. If the board is clipped, widen the browser window.
 
-Both instances display the same board and both players. Each instance creates and controls its own named player. A movement command changes position by **exactly one tile**. Sword, Shield, and Shoes can be added and removed at runtime; each decorator implements `draw(Graphics2D, int, int)`, delegates to the wrapped character, and draws its equipment. No combat, collision, scoring, game engine, or autonomous actions are required.
+### What to show
+
+- Identify Alice and Bob on both boards. They start on the same tile, so their drawings can overlap until one player moves.
+- In the local window, press an arrow key once. Show Alice move one tile in both windows. Repeat from the browser for Bob.
+- Use the equipment checkboxes to add Sword, Shield, and Shoes. Show each overlay on both boards. Remove one item while others are equipped and show that only its overlay disappears. Demonstrate an equipment change from each client.
+- Show the passing JUnit run, including your three tests, and the successful GitHub Actions run.
+
+When you finish, close the local Swing window and run `docker compose down` in the project directory.
 
 ## Architecture contract
 
@@ -43,7 +50,7 @@ The instructor provides most JUnit 5 acceptance tests. Students must **add exact
 
 ### Starter-template status
 
-The Java starter compiles. Run `mvn test-compile` to compile the starter and tests, then `mvn test` to run the offline acceptance suite. Failures are expected until you complete the TODOs in Blackboard, the decorators, PlayerCodec, and IncomingPlayerHandler. The instructor branch includes a `.starter-template` marker so CI can package and smoke-test the starter while its acceptance tests are intentionally failing. Delete that marker in your first team PR to require the full JUnit suite before packaging and building the image. The CI smoke test uses a private broker and checks the noVNC page, Java process, and Swing window.
+Run `mvn -B test-compile` to verify that the untouched starter and tests compile. Then run `mvn -B -Djava.awt.headless=true test`. The untouched starter runs 58 instructor cases with 33 passes, 23 assertion failures, 2 decode-stub errors, and 0 skips. Use those failures to guide the TODOs in Blackboard, the decorators, PlayerCodec, and IncomingPlayerHandler. The instructor branch includes a `.starter-template` marker so CI can package and smoke-test the starter while its acceptance tests are intentionally failing. Delete that marker in your first team PR to require the full JUnit suite before packaging and building the image. The CI smoke test uses a private broker and checks the noVNC page, Java process, and Swing window.
 
 ### Behavior covered by the instructor tests
 
