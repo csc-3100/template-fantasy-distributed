@@ -27,20 +27,28 @@ Both instances display the same board and both players. Each instance creates an
 
 ## TDD and submission
 
-The instructor provides most JUnit 5 acceptance tests. Students must **add three meaningful tests** for features of their choice, without weakening instructor tests. Implement functionality by making tests pass, and keep tests independent of the live public broker using test doubles. The CI workflow must run tests before packaging the executable JAR, building the Docker image, and smoke-testing the noVNC endpoint and Java process. The instructor provides the Dockerfile, Compose, workflow, and noVNC configuration; students implement application functionality, not infrastructure.
+The instructor provides most JUnit 5 acceptance tests. Students must **add exactly three meaningful JUnit 5 tests** in a separate `StudentAcceptanceTest.java` file for features of their choice. Keep the instructor tests intact. Implement functionality by making tests pass, and keep tests independent of the live public broker using test doubles. The CI workflow must run tests before packaging the executable JAR, building the Docker image, and smoke-testing the noVNC endpoint and Java process. The instructor provides the Dockerfile, Compose, workflow, and noVNC configuration; students implement application functionality, not infrastructure.
 
 ### Starter-template status
 
-**This branch records the approved A04 contract, not a finished runnable template.** The existing `main` implementation still uses `GameModel` composition, a `MqttGateway`, and a console Docker entrypoint; those must be refactored before release. Existing tests and CI also reflect the previous assignment (23 tests and four student tests). Do not distribute this branch as the final A04 starter until implementation, test coverage, and Docker/noVNC verification are complete.
+The Java starter compiles. Run `mvn test-compile` to compile the starter and tests, then `mvn test` to run the offline acceptance suite. Failures are expected until you complete the TODOs in Blackboard, the decorators, PlayerCodec, and IncomingPlayerHandler. Docker/noVNC and CI preparation are still pending.
+
+### Behavior covered by the instructor tests
+
+- Arrow keys move the local player one tile on a 16-column by 11-row board. Ignore zero, diagonal, multi-tile, and out-of-bounds commands. Local commands can only edit the local player.
+- Equipment IDs are `sword`, `shield`, and `shoes`. Add each at most once and preserve the order of remaining items on removal. Ignore unknown IDs and attempts to remove absent items. Sword adds 5 attack, Shield adds 5 defense, and Shoes are visual only.
+- Draw the wrapped character first, then draw the overlay within its 40-pixel tile. Keep Sword on the right, Shield on the left, and Shoes below the body so the overlays can be seen together.
+- Each changed local snapshot produces one `players` event with the prior and new snapshots and one publish. Remote changes produce the same observer event without a publish. An identical remote snapshot produces no event. The Swing application applies incoming snapshots on the event-dispatch thread.
+- The receiver accepts a UTF-8 JSON snapshot only when the team topic and player suffix match, the state is valid, and the player is remote. Reject malformed or incomplete snapshots, unsupported types and equipment, duplicate equipment, and coordinates outside the board. Ignore a bad message and continue receiving.
 
 ## Implementation checklist for instructor preparation
 
-- [ ] Refactor `GameModel` into observable `Blackboard extends PropertyChangeSupport`.
-- [ ] Add runtime removal and Shoes; test decorator drawing delegation.
-- [ ] Separate `Publisher` and `Subscriber`, preserving MQTT protocol and preventing echoes.
-- [ ] Render decorated players in the shared Swing board and support one-tile commands.
+- [x] Refactor `GameModel` into observable `Blackboard extends PropertyChangeSupport`.
+- [x] Add runtime removal and Shoes; test decorator drawing delegation.
+- [x] Separate `Publisher` and `Subscriber`, preserving MQTT protocol and preventing echoes.
+- [x] Render decorated players in the shared Swing board and support one-tile commands.
 - [ ] Replace Docker console mode with Swing + Xvfb + lightweight desktop + noVNC.
-- [ ] Provide complete instructor acceptance tests and require exactly three additional student tests.
+- [x] Provide complete instructor acceptance tests and require exactly three additional student tests.
 - [ ] Update CI to test, package, build container, and smoke-test noVNC.
 - [ ] Verify IDE ↔ Docker bidirectional MQTT demonstration.
 

@@ -47,4 +47,20 @@ class IncomingPlayerHandlerTest {
         "invalid json".getBytes(StandardCharsets.UTF_8)));
     assertTrue(received.isEmpty());
   }
+
+  @Test void rejectsMismatchedTopicAndPayloadPlayer() {
+    List<PlayerState> received = new ArrayList<>();
+    IncomingPlayerHandler handler = new IncomingPlayerHandler("team01", "alice", received::add);
+    handler.accept("csc3100/a04/team01/players/bob", message("charlie"));
+    assertTrue(received.isEmpty());
+  }
+
+  @Test void malformedMessageDoesNotPreventNextValidSnapshot() {
+    List<PlayerState> received = new ArrayList<>();
+    IncomingPlayerHandler handler = new IncomingPlayerHandler("team01", "alice", received::add);
+    String topic = "csc3100/a04/team01/players/zoë";
+    handler.accept(topic, "{}".getBytes(StandardCharsets.UTF_8));
+    handler.accept(topic, message("zoë"));
+    assertEquals(List.of(new PlayerState("zoë", "warrior", 2, 4, List.of())), received);
+  }
 }

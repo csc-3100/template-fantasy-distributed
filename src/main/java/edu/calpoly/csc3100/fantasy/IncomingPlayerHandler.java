@@ -18,15 +18,18 @@ public final class IncomingPlayerHandler {
 
   public IncomingPlayerHandler(String team, String localUsername,
                                Consumer<PlayerState> receiver) {
-    this.topicPrefix = "csc3100/a04/" + Objects.requireNonNull(team) + "/players/";
+    this.topicPrefix = Subscriber.topicPrefix(team);
     this.localUsername = Objects.requireNonNull(localUsername);
     this.receiver = Objects.requireNonNull(receiver);
   }
 
   public void accept(String topic, byte[] payload) {
-    // TODO: reject topics outside this team's player namespace.
+    if (!topic.startsWith(topicPrefix)) return;
+    String player = topic.substring(topicPrefix.length());
+    if (player.isEmpty() || player.contains("/") || player.equals(localUsername)) return;
+    // TODO: complete the snapshot processing below.
     // TODO: decode UTF-8 JSON using PlayerCodec.
-    // TODO: ignore the local player's own state.
+    // TODO: require the topic suffix to match the decoded player.
     // TODO: deliver valid remote state to receiver exactly once.
     // TODO: handle malformed JSON without terminating the MQTT callback.
   }
