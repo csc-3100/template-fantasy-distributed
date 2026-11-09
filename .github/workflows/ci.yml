@@ -1,10 +1,12 @@
-name: Java CI
+name: Java and noVNC CI
 on:
   push:
   pull_request:
+
 jobs:
-  test:
+  test-and-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -12,9 +14,48 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Compile instructor starter (intentional failing acceptance tests)
-        if: hashFiles('.starter-template') != ''
-        run: mvn -B -DskipTests package
+
       - name: Run full JUnit suite (student team repositories)
         if: hashFiles('.starter-template') == ''
-        run: mvn -B clean verify
+        run: mvn -B -Djava.awt.headless=true test
+
+      - name: Package executable JAR
+        run: mvn -B -DskipTests package
+
+      - name: Build Swing image
+        run: docker build -t fantasy-a04:ci .
+
+      - name: Smoke-test noVNC and the Swing window
+        run: |
+          set -euo pipefail
+          trap 'docker rm -f fantasy-smoke mqtt-smoke >/dev/null 2>&1 || true; docker network rm a04-smoke >/dev/null 2>&1 || true' EXIT
+          docker network create a04-smoke
+          docker run -d --name mqtt-smoke --network a04-smoke eclipse-mosquitto:2 \
+            sh -c 'printf "listener 1883\nallow_anonymous true\n" >/tmp/smoke.conf; exec mosquitto -c /tmp/smoke.conf'
+          for attempt in {1..30}; do
+            if docker exec mqtt-smoke mosquitto_pub -h localhost -t smoke/ready -m ready; then
+              break
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              docker logs mqtt-smoke
+              exit 1
+            fi
+            sleep 1
+          done
+          docker run -d --init --name fantasy-smoke --network a04-smoke \
+            -p 127.0.0.1:6080:6080 -e PLAYER=ci-player -e TEAM=ci \
+            -e MQTT_BROKER=tcp://mqtt-smoke:1883 fantasy-a04:ci
+          for attempt in {1..45}; do
+            if curl --fail --silent http://127.0.0.1:6080/vnc.html >/dev/null \
+              && docker exec fantasy-smoke pgrep -f '^java -jar /app/game.jar$' \
+              && docker exec fantasy-smoke xwininfo -root -tree | grep -F 'Fantasy Adventure'; then
+              exit 0
+            fi
+            if [[ "$(docker inspect -f '{{.State.Running}}' fantasy-smoke)" != true ]]; then
+              break
+            fi
+            sleep 1
+          done
+          docker logs fantasy-smoke
+          docker logs mqtt-smoke
+          exit 1

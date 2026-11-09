@@ -1,0 +1,5 @@
+*
+!docker/
+!docker/start-swing.sh
+!target/
+!target/fantasy-distributed-1.0-SNAPSHOT.jar

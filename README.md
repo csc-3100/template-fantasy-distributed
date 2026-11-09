@@ -10,8 +10,20 @@ Implement Factory, Decorator, and Observer patterns; synchronize two Java Swing 
 
 Run **two instances of the same Swing application**:
 
-1. Local client from the IDE with `mvn exec:java`.
-2. Containerized client with `docker compose up --build`, viewed at `http://localhost:6080/vnc.html`.
+1. Local Swing client. Use the same unique team ID in both commands and a different player name for each instance.
+
+   ```sh
+   TEAM=your-team PLAYER=alice mvn exec:java
+   ```
+
+2. Containerized Swing client. In a second terminal, package the JAR, build the image, and open the browser desktop.
+
+   ```sh
+   mvn -B -DskipTests package
+   TEAM=your-team PLAYER=bob docker compose up --build
+   ```
+
+   Open [noVNC](http://localhost:6080/vnc.html?autoconnect=1). Click the Swing board to send it keyboard input. The browser endpoint binds to localhost. Run `docker compose down` to stop the container.
 
 Both instances display the same board and both players. Each instance creates and controls its own named player. A movement command changes position by **exactly one tile**. Sword, Shield, and Shoes can be added and removed at runtime; each decorator implements `draw(Graphics2D, int, int)`, delegates to the wrapped character, and draws its equipment. No combat, collision, scoring, game engine, or autonomous actions are required.
 
@@ -31,7 +43,7 @@ The instructor provides most JUnit 5 acceptance tests. Students must **add exact
 
 ### Starter-template status
 
-The Java starter compiles. Run `mvn test-compile` to compile the starter and tests, then `mvn test` to run the offline acceptance suite. Failures are expected until you complete the TODOs in Blackboard, the decorators, PlayerCodec, and IncomingPlayerHandler. Docker/noVNC and CI preparation are still pending.
+The Java starter compiles. Run `mvn test-compile` to compile the starter and tests, then `mvn test` to run the offline acceptance suite. Failures are expected until you complete the TODOs in Blackboard, the decorators, PlayerCodec, and IncomingPlayerHandler. The instructor branch includes a `.starter-template` marker so CI can package and smoke-test the starter while its acceptance tests are intentionally failing. Delete that marker in your first team PR to require the full JUnit suite before packaging and building the image. The CI smoke test uses a private broker and checks the noVNC page, Java process, and Swing window.
 
 ### Behavior covered by the instructor tests
 
@@ -47,8 +59,8 @@ The Java starter compiles. Run `mvn test-compile` to compile the starter and tes
 - [x] Add runtime removal and Shoes; test decorator drawing delegation.
 - [x] Separate `Publisher` and `Subscriber`, preserving MQTT protocol and preventing echoes.
 - [x] Render decorated players in the shared Swing board and support one-tile commands.
-- [ ] Replace Docker console mode with Swing + Xvfb + lightweight desktop + noVNC.
+- [x] Replace Docker console mode with Swing + Xvfb + lightweight desktop + noVNC.
 - [x] Provide complete instructor acceptance tests and require exactly three additional student tests.
-- [ ] Update CI to test, package, build container, and smoke-test noVNC.
+- [x] Update CI to test, package, build container, and smoke-test noVNC.
 - [ ] Verify IDE ↔ Docker bidirectional MQTT demonstration.
 
